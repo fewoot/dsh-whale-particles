@@ -1,0 +1,46 @@
+{
+  "name": "dsh-whale-particles",
+  "version": "0.1.0",
+  "description": "Interactive whale particle background for the DSH Web UI: every dot carries its own slow force; mouse disturbs them, plus an auto screensaver mode with 360-degree waves and full-screen breathing.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fewoot/dsh-whale-particles.git"
+  },
+  "homepage": "https://github.com/fewoot/dsh-whale-particles#readme",
+  "bugs": {
+    "url": "https://github.com/fewoot/dsh-whale-particles/issues"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [],
+      "immediately": true
+    }
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "wallpaper",
+    "background",
+    "whale",
+    "particles"
+  ]
+}

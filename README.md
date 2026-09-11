@@ -35,18 +35,20 @@ dsh plugin --profile desktop add ./dsh-whale-particles
 需要调整时,编辑 `lib/client.js` 中 `STYLE` 常量开头几条与
 `measureContentCenter()` 里的选择器,把哈希前缀换成本机实际类名:
 
-| 作用 | 选择器(0.1.1-rc.2 / Desktop v2.0.x) |
+| 作用 | 选择器(0.1.2-rc.1 / Desktop v2.0.5) |
 | --- | --- |
-| 主框架透明 | `.pI_x6G_frame` |
-| 会话/根容器透明 | `.wSkVaW_root`、`.ydkMvW_root` |
-| 侧栏半透明 | `.pI_x6G_sidebarCol` |
-| 内容区中心测量 | `.pI_x6G_sidebarCol`、`[data-slot="sidebar"]` |
-| 空会话输入栏下移 | `.wSkVaW_root[data-phase=hero] .wSkVaW_composerSeat` |
+| 主框架透明 | `._1qAH1q_frame` |
+| 会话/根容器透明 | `.uPhUma_root` |
+| 侧栏半透明 | `._1qAH1q_sidebarCol` |
+| 内容区中心测量 | `._1qAH1q_sidebarCol`、`[data-slot="sidebar"]` |
+| 空会话输入栏下移 | `.uPhUma_root[data-phase=hero] .uPhUma_composerSeat` |
 
-实测:**DSH Desktop v2.0.5** 与 v2.0.3 的前缀不同——把上面的哈希换成目标机器的实际值即可
-(例如在 DevTools 里选中主框架/侧栏/输入栏元素,取类名里 `_frame`、`_sidebarCol`、
-`_composerSeat` 对应项的新前缀;全局替换 `pI_x6G`、`wSkVaW`、`ydkMvW` 三处)。
-改动后重启生效。
+实测:**DSH Desktop v2.0.5**(web 前端 0.1.2-rc.1)的哈希前缀是 `_1qAH1q`
+(主框架/侧栏,来自 `@deepseek-ai/dsh-client-ui-layout`)与 `uPhUma`
+(会话/根容器/输入栏,来自 `@deepseek-ai/dsh-client-ui-conversation`);旧的
+v2.0.3(0.1.1-rc.2)使用 `pI_x6G`、`wSkVaW`、`ydkMvW`。换版本后按上述办法
+重新取值(DevTools 选中元素,取 `_frame`、`_sidebarCol`、`_composerSeat`
+对应项的新前缀;全局替换这两处前缀即可)。改动后重启生效。
 
 ## 卸载 / 临时隐藏
 

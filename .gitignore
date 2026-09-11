@@ -1,4 +1,11 @@
+# build artifacts
 node_modules/
 lib/*.map
-*.tgz
-.DS_Store
+
+# scans / throwaway caches
+_scan/
+*.tmp
+debug.log
+
+# local packages built by hand (pack into release/ instead)
+/dsh-whale-particles-*.tgz

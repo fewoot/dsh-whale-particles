@@ -2,6 +2,10 @@
 
 把“点阵鲸鱼/照片点阵”作为 DSH Web 界面背景的浏览器端插件。
 
+![dsh-whale-particles 效果示例](assets/whale-preview.png)
+
+> 上图为界面示例(点阵主体 + 界面透明化后的观感)。
+
 - 每颗粒子都有自己**独立、低频、平滑**的“外力”(非统一流场、非逐帧白噪声),像官网鲸鱼一样:每颗各自动作柔和、彼此不齐;
 - **手动模式**:光标靠近时圈内各点柔和躁动,移开即平滑归位;
 - **自动模式(屏保)**:“波”沿 **360° 任意方向**扫过主体(自动避开与上一道过近的方向,斜向按系数减速)+ “全屏呼吸”(缓缓起、维持、缓缓落),间隔默认 0(波连着波);
@@ -19,12 +23,15 @@ dsh plugin --profile desktop add ./dsh-whale-particles
 
 无 dsh CLI 时(与离线分发包相同做法):
 1. 把 `dsh-whale-particles` 文件夹复制到
-   `C:\Users\<用户名>\.dsh\profiles\desktop\node_modules\dsh-whale-particles`;
-2. 在 `…\profiles\desktop\package.json` 的 `dsh.profile.bundles` 里追加
+   `%USERPROFILE%\.dsh\profiles\<profile>\node_modules\dsh-whale-particles`;
+2. 在 `…\profiles\<profile>\package.json` 的 `dsh.profile.bundles` 里追加
    `"dsh-whale-particles"`(改前先备份);
 3. 重启 DSH Desktop。
 
-若 profile 不叫 `desktop`,把上面路径中的名字换成实际的即可。
+profile 名默认 `desktop`(桌面版);若你的 profile 不叫这个,换成实际的即可。
+**离线一键安装包**(免命令行)见 [`release/`](release/) 目录:解压
+`dsh-whale-particles-offline-*.zip` 后双击 `install-whale.bat` 即可,脚本会自动
+备份 profile 的 `package.json` 并注册 bundle。
 
 ## 版本适配(重要)
 
@@ -35,7 +42,7 @@ dsh plugin --profile desktop add ./dsh-whale-particles
 需要调整时,编辑 `lib/client.js` 中 `STYLE` 常量开头几条与
 `measureContentCenter()` 里的选择器,把哈希前缀换成本机实际类名:
 
-| 作用 | 选择器(0.1.2-rc.1 / Desktop v2.0.5) |
+| 作用 | 选择器(0.1.5-rc.1 / Desktop v2.0.9,与 0.1.2-rc.1 / v2.0.5 相同) |
 | --- | --- |
 | 主框架透明 | `._1qAH1q_frame` |
 | 会话/根容器透明 | `.uPhUma_root` |
@@ -71,3 +78,14 @@ document.getElementById('dsh-whale-particles-layer')?.remove();
   `window.__ModuleLoader__.load` 格式,免二次构建。
 - 参数与照片蒙版保存在**浏览器 localStorage**(键 `dsh-whale:cfg` / `dsh-whale:auto` /
   `dsh-whale:photo`),每台机器各自保存,不随插件文件迁移。
+
+## 仓库结构
+
+```text
+package.json          dsh.bundle.patch(bundle 资格)+ dsh.client(Web 客户端半边)
+cordis.patch.yml      把本插件 insert 进 profile 的层栈
+lib/index.js          宿主半边(空实现,纯浏览器插件)
+lib/client.js         全部实现:点阵引擎 + 界面透明化 CSS + 参数面板(免构建)
+assets/               README 用示例图
+release/              发行物:最新 tgz、离线安装 zip、一键安装/卸载脚本
+```

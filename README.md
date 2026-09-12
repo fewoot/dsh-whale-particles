@@ -1,5 +1,9 @@
 # dsh-whale-particles
 
+[![npm version](https://img.shields.io/npm/v/dsh-whale-particles)](https://www.npmjs.com/package/dsh-whale-particles)
+[![npm downloads](https://img.shields.io/npm/dm/dsh-whale-particles)](https://www.npmjs.com/package/dsh-whale-particles)
+[![license](https://img.shields.io/npm/l/dsh-whale-particles)](LICENSE)
+
 把“点阵鲸鱼/照片点阵”作为 DSH Web 界面背景的浏览器端插件。
 
 ![dsh-whale-particles 效果示例](assets/whale-preview.png)
@@ -16,23 +20,40 @@
 - **主界面不占位**:没有右下角悬浮条,参数与手动/自动切换都在设置页里;
 - 附带调整:**空会话(hero)输入栏整体下移**,避免盖住主体;有对话后自动恢复贴底布局;鲸鱼中心自动跟随左侧栏宽窄(内容区居中,平滑补间)。
 
-## 安装(本地/离线)
+## 安装
+
+**方式一:npm(推荐,之后可在插件市场里一键更新)**
+
+```sh
+dsh plugin --profile desktop add dsh-whale-particles
+```
+
+装好后 profile 会把它记成依赖,`npm` 上发了新版本时,DSH 插件市场
+(设置 → 插件)就能检测到并一键更新。
+
+**方式二:本地目录**
 
 ```sh
 dsh plugin --profile desktop add ./dsh-whale-particles
 ```
 
-无 dsh CLI 时(与离线分发包相同做法):
+**方式三:离线包(免命令行)**
+
+见 [`release/`](release/) 目录:解压 `dsh-whale-particles-offline-*.zip` 后双击
+`install-whale.bat`,脚本会自动备份 profile 的 `package.json`、拷入插件并注册 bundle。
+
+**不借助 dsh CLI 手动安装**(与离线包内部做法相同):
 1. 把 `dsh-whale-particles` 文件夹复制到
    `%USERPROFILE%\.dsh\profiles\<profile>\node_modules\dsh-whale-particles`;
 2. 在 `…\profiles\<profile>\package.json` 的 `dsh.profile.bundles` 里追加
    `"dsh-whale-particles"`(改前先备份);
 3. 重启 DSH Desktop。
 
+> 注意:手动拷进去的副本不会出现在插件市场的"已安装"列表里,也就没有一键更新;
+> 想走市场更新请用方式一。
+
 profile 名默认 `desktop`(桌面版);若你的 profile 不叫这个,换成实际的即可。
-**离线一键安装包**(免命令行)见 [`release/`](release/) 目录:解压
-`dsh-whale-particles-offline-*.zip` 后双击 `install-whale.bat` 即可,脚本会自动
-备份 profile 的 `package.json` 并注册 bundle。
+安装/更新后**需要重启 DSH Desktop**(客户端 bundle 在启动时装载)。
 
 ## 版本适配(重要)
 

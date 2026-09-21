@@ -6,6 +6,7 @@ lib/*.map
 _scan/
 *.tmp
 debug.log
+.browser-check/
 
 # local packages built by hand (pack into release/ instead)
 /dsh-whale-particles-*.tgz

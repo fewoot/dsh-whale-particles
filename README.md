@@ -57,27 +57,36 @@ profile 名默认 `desktop`(桌面版);若你的 profile 不叫这个,换成实�
 
 ## 版本适配(重要)
 
-插件的“界面透明化”与“空会话输入栏下移”依赖 DSH Web 界面里 **CSS Module 哈希类名**;
-不同 DSH/Desktop 版本这些前缀会变。**点阵引擎本身不依赖界面类名,任何版本都能渲染**,
-变了的只是“让界面透明、露出背景”那几条规则和 composer 下移规则。
+插件的“界面透明化”与“空会话输入栏下移”依赖 DSH Web 界面里 **CSS Module 哈希类名**
+(如 `qNbT7G_frame`、`_0cyzDW_composerSeat`)。这些前缀每次重新构建都会变,**旧版本把前缀写死,
+所以每次 DSH/Desktop 升级这两项都会失效**。
 
-需要调整时,编辑 `lib/client.js` 中 `STYLE` 常量开头几条与
-`measureContentCenter()` 里的选择器,把哈希前缀换成本机实际类名:
+**0.3.1 起改为运行时自发现,不再需要跟着版本改代码**:UI 各包把自己的 CSS 以
+`<style data-plugin-css="<包名>/<模块>.module.css">` 注入文档,同一模块里类名的**后缀**
+(`_frame` / `_sidebarCol` / `_root` / `_composerSeat`)是稳定的,只有前缀是哈希。
+插件在挂载时扫描这些样式表,按模块定位、按后缀取前缀;UI 样式表若在本插件之后注入,
+`MutationObserver` 会补扫一次并重建样式。
 
-| 作用 | 选择器(0.1.5-rc.1 / Desktop v2.0.9,与 0.1.2-rc.1 / v2.0.5 相同) |
-| --- | --- |
-| 主框架透明 | `._1qAH1q_frame` |
-| 会话/根容器透明 | `.uPhUma_root` |
-| 侧栏半透明 | `._1qAH1q_sidebarCol` |
-| 内容区中心测量 | `._1qAH1q_sidebarCol`、`[data-slot="sidebar"]` |
-| 空会话输入栏下移 | `.uPhUma_root[data-phase=hero] .uPhUma_composerSeat` |
+- 点阵引擎本身不依赖任何界面类名,**任何版本都能渲染**;受影响的只有“让界面透明、露出背景”
+  和 composer 下移这几条规则。
+- 升级后想确认解析结果:DevTools 里执行 `__dshWhale.selectors()`,会列出每个类名及其来源
+  (`discovered` = 自发现 / `fallback` = 回退到内置值);`__dshWhale.rescan()` 可手动重扫并重建样式。
+- 解析失败时控制台会留一条 `[dsh-whale-particles] 界面类名未能在样式表里定位…` 告警
+  (不再静默);此时用 `maintain/extract-ui-css.mjs` 取出本机真实类名,按需更新
+  `lib/client.js` 里的 `FALLBACK_BY_VERSION` 兜底表。
 
-实测:**DSH Desktop v2.0.5**(web 前端 0.1.2-rc.1)的哈希前缀是 `_1qAH1q`
-(主框架/侧栏,来自 `@deepseek-ai/dsh-client-ui-layout`)与 `uPhUma`
-(会话/根容器/输入栏,来自 `@deepseek-ai/dsh-client-ui-conversation`);旧的
-v2.0.3(0.1.1-rc.2)使用 `pI_x6G`、`wSkVaW`、`ydkMvW`。换版本后按上述办法
-重新取值(DevTools 选中元素,取 `_frame`、`_sidebarCol`、`_composerSeat`
-对应项的新前缀;全局替换这两处前缀即可)。改动后重启生效。
+各版本实测类名(下表只是兜底表的来源,正常路径是自发现):
+
+| 作用 | 后缀 | 0.1.5-rc.2(Desktop v2.0.13) | 0.1.2-rc.1 / 0.1.5-rc.1(v2.0.5~v2.0.9) | 0.1.1-rc.2(v2.0.3) |
+| --- | --- | --- | --- | --- |
+| 主框架透明 | `_frame` | `qNbT7G_frame` | `_1qAH1q_frame` | `pI_x6G_frame` |
+| 侧栏半透明 | `_sidebarCol` | `qNbT7G_sidebarCol` | `_1qAH1q_sidebarCol` | `pI_x6G_sidebarCol` |
+| 会话/根容器透明 | `_root` | `_0cyzDW_root` | `uPhUma_root` | `wSkVaW_root` |
+| 空会话输入栏下移 | `_composerSeat` | `_0cyzDW_composerSeat` | `uPhUma_composerSeat` | `wSkVaW_composerSeat` |
+
+对照的模块:`@deepseek-ai/dsh-client-ui-layout/AppFrame.module.css`(框架/侧栏)、
+`@deepseek-ai/dsh-client-ui-conversation/ConversationRoot.module.css`(会话根/输入栏座)。
+临时用 DevTools 取类名也可以:选中元素看 `_frame`、`_sidebarCol`、`_composerSeat` 对应项的新前缀。
 
 ## 卸载 / 临时隐藏
 
@@ -90,6 +99,14 @@ dsh plugin --profile desktop remove dsh-whale-particles
 ```js
 document.body.removeAttribute('data-dsh-whale');
 document.getElementById('dsh-whale-particles-layer')?.remove();
+```
+
+排查界面透明化/输入栏下移为何没生效(升级后最常用):
+
+```js
+__dshWhale.selectors()   // 每个类名的值 + 来源(discovered / fallback)+ 当前点数
+__dshWhale.rescan()      // 重新扫描样式表;有变化返回 true
+__dshWhale.apply()       // 按当前 SEL 重建样式
 ```
 
 ## 说明
@@ -107,7 +124,7 @@ document.getElementById('dsh-whale-particles-layer')?.remove();
 package.json          dsh.bundle.patch(bundle 资格)+ dsh.client(Web 客户端半边)
 cordis.patch.yml      把本插件 insert 进 profile 的层栈
 lib/index.js          宿主半边(空实现,纯浏览器插件)
-lib/client.js         全部实现:点阵引擎 + 界面透明化 CSS + 参数面板(免构建)
+lib/client.js         全部实现:点阵引擎 + 界面类名自发现 + 界面透明化 CSS + 参数面板(免构建)
 assets/               README 用示例图
 release/              发行物:最新 tgz、离线安装 zip、一键安装/卸载脚本
 ```

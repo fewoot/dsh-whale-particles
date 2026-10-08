@@ -63,30 +63,67 @@ profile 名默认 `desktop`(桌面版);若你的 profile 不叫这个,换成实�
 
 **0.3.1 起改为运行时自发现,不再需要跟着版本改代码**:UI 各包把自己的 CSS 以
 `<style data-plugin-css="<包名>/<模块>.module.css">` 注入文档,同一模块里类名的**后缀**
-(`_frame` / `_sidebarCol` / `_root` / `_composerSeat`)是稳定的,只有前缀是哈希。
+(`_frame` / `_sidebarCol` / `_centerCol` / `_root` / `_composerSeat`)是稳定的,只有前缀是哈希。
 插件在挂载时扫描这些样式表,按模块定位、按后缀取前缀;UI 样式表若在本插件之后注入,
 `MutationObserver` 会补扫一次并重建样式。
 
-- 点阵引擎本身不依赖任何界面类名,**任何版本都能渲染**;受影响的只有“让界面透明、露出背景”
+**0.4.0 起再加一层「结构自发现」,这类失效基本不用再管**:后缀自发现只能解析*名单上*
+那几层的真名,UI 一旦**新增**一个铺底容器就漏一层,而且毫无告警。所以每次挂载(≈每次启动
+客户端 / 刷新页面)还会额外做一件事 —— 从会话内容**沿着祖先链走到 `<body>`**,凡是计算
+样式不透明的祖先就地打内联 `background: transparent !important` 中和,并记住原值待卸载时还原:
+
+```
+div[data-slot="conversation.content"]          ← 锚点(语义选择器,无哈希)
+  → div.Dc7zOa_root[data-phase=hero]           ← 会话根
+  → div[data-slot="main"]                      ← 槽锚点(display:contents,不生成盒子)
+  → div.BynINW_centerCol                       ← 中列 ← 0.2.0-rc.2 新增的那层,以前就是漏在这里
+  → div.BynINW_frame
+  → div[data-slot="root"]                      ← 槽锚点(display:contents)
+  → #root
+  → body
+```
+
+为什么只走**祖先**就够:所有小面(缩略图、卡片、代码块)都是会话的**后代**,交互弹出的
+菜单 / 悬浮卡是**兄弟** —— 它们都挡不住那张 `z-index:-1` 的画布,所以既不需要也不应该动。
+内联 + `!important` 压过任何样式表规则(包括对方也写了 `!important`),所以从 0.4.0 起
+**既不用跟着升级改名单,也不用再算特异度**。DOM 增删 / 尺寸变化 / 深浅主题切换都会触发重扫
+(有限流),节点被重建也能自动补上。
+
+> **0.4.0 一并修复 —— DSH 官方客户端 0.2.0-rc.2:** 新版 Windows 桌面端会在 `<html>` 上打
+> `data-windows-titlebar`,配套规则 `[data-windows-titlebar] .*_centerCol{background:var(--dsw-alias-bg-base)}`
+> 给**中列**(会话所在的那一格)铺了一层不透明底色。中列是 `ConversationRoot` 的**父节点**,
+> 所以只把 frame / root 透明化已经不够 —— 鲸鱼照常渲染、只是被这层整片盖住,看起来就像"插件失效"。
+> 这一版同时保留了类名规则(`UI_SOURCES` 多了 `centerCol`,`body[data-dsh-whale] .*_centerCol{background:transparent}`,
+> 特异度 (0,2,1) 高于那两条 (0,2,0))作为快路径,结构自发现负责兜住以后的新层。
+
+- 点阵引擎本身不依赖任何界面类名,**任何版本都能渲染**;受影响的只有"让界面透明、露出背景"
   和 composer 下移这几条规则。
-- 升级后想确认解析结果:DevTools 里执行 `__dshWhale.selectors()`,会列出每个类名及其来源
-  (`discovered` = 自发现 / `fallback` = 回退到内置值);`__dshWhale.rescan()` 可手动重扫并重建样式。
-- 解析失败时控制台会留一条 `[dsh-whale-particles] 界面类名未能在样式表里定位…` 告警
-  (不再静默);此时用 `maintain/extract-ui-css.mjs` 取出本机真实类名,按需更新
-  `lib/client.js` 里的 `FALLBACK_BY_VERSION` 兜底表。
+- 升级后想确认状态,DevTools 里看这三样:
+  - `__dshWhale.selectors()` —— 每个类名是 `discovered`(自发现)还是 `fallback`(回退内置值);
+  - `__dshWhale.obstructions()` —— 锚点、完整祖先链、**已中和**的层、没中和掉的**残留**、以及伪元素;
+  - `__dshWhale.rescanChain()` —— 手动重跑一次结构自发现。
+- 控制台会主动说话,不再静默:中和了几层会打一条 `info`;真出问题会打 `warn` ——
+  「结构自检:仍有不透明祖先没能中和」「结构自检找不到内容锚点」。
+- 内联样式唯一管不到的是**伪元素**(`::before` / `::after`)。它们只被**报告**、不会被自动改
+  —— frame 那条 40px 标题栏 `::before` 就是有意保留实色的。若哪天真的多出一条挡住的伪元素,
+  `obstructions().pseudos` 会点名。
+- 仍然失败时(理论上只剩伪元素/`<canvas>`/`<img>` 这类遮挡),用 `maintain/extract-ui-css.mjs`
+  取本机真实类名,或按 `maintain/RELEASE.md` 第 6 节的流程排查。
 
 各版本实测类名(下表只是兜底表的来源,正常路径是自发现):
 
-| 作用 | 后缀 | 0.1.5-rc.2(Desktop v2.0.13) | 0.1.2-rc.1 / 0.1.5-rc.1(v2.0.5~v2.0.9) | 0.1.1-rc.2(v2.0.3) |
-| --- | --- | --- | --- | --- |
-| 主框架透明 | `_frame` | `qNbT7G_frame` | `_1qAH1q_frame` | `pI_x6G_frame` |
-| 侧栏半透明 | `_sidebarCol` | `qNbT7G_sidebarCol` | `_1qAH1q_sidebarCol` | `pI_x6G_sidebarCol` |
-| 会话/根容器透明 | `_root` | `_0cyzDW_root` | `uPhUma_root` | `wSkVaW_root` |
-| 空会话输入栏下移 | `_composerSeat` | `_0cyzDW_composerSeat` | `uPhUma_composerSeat` | `wSkVaW_composerSeat` |
+| 作用 | 后缀 | 0.2.0-rc.2(官方客户端 Desktop 0.2.0-rc.2) | 0.1.5-rc.2(Desktop v2.0.13) | 0.1.2-rc.1 / 0.1.5-rc.1(v2.0.5~v2.0.9) | 0.1.1-rc.2(v2.0.3) |
+| --- | --- | --- | --- | --- | --- |
+| 主框架透明 | `_frame` | `BynINW_frame` | `qNbT7G_frame` | `_1qAH1q_frame` | `pI_x6G_frame` |
+| 侧栏半透明 | `_sidebarCol` | `BynINW_sidebarCol` | `qNbT7G_sidebarCol` | `_1qAH1q_sidebarCol` | `pI_x6G_sidebarCol` |
+| **中列透明(0.4.0 新增)** | `_centerCol` | `BynINW_centerCol` | `qNbT7G_centerCol` | `_1qAH1q_centerCol` | `pI_x6G_centerCol` |
+| 会话/根容器透明 | `_root` | `Dc7zOa_root` | `_0cyzDW_root` | `uPhUma_root` | `wSkVaW_root` |
+| 空会话输入栏下移 | `_composerSeat` | `Dc7zOa_composerSeat` | `_0cyzDW_composerSeat` | `uPhUma_composerSeat` | `wSkVaW_composerSeat` |
 
-对照的模块:`@deepseek-ai/dsh-client-ui-layout/AppFrame.module.css`(框架/侧栏)、
+对照的模块:`@deepseek-ai/dsh-client-ui-layout/AppFrame.module.css`(框架/侧栏/中列)、
 `@deepseek-ai/dsh-client-ui-conversation/ConversationRoot.module.css`(会话根/输入栏座)。
-临时用 DevTools 取类名也可以:选中元素看 `_frame`、`_sidebarCol`、`_composerSeat` 对应项的新前缀。
+临时用 DevTools 取类名也可以:选中元素看 `_frame`、`_sidebarCol`、`_centerCol`、`_composerSeat`
+对应项的新前缀。
 
 ## 卸载 / 临时隐藏
 

@@ -1,6 +1,6 @@
 {
   "name": "dsh-whale-particles",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Interactive whale particle background for the DSH Web UI: every dot carries its own slow force; mouse disturbs them, plus an auto screensaver mode with 360-degree waves and full-screen breathing.",
   "license": "MIT",
   "repository": {

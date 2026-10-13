@@ -18,7 +18,7 @@ DSH 鲸鱼点阵背景 · 离线安装包
 【注意事项】
 - profile 名:默认 desktop;如果你的 DSH 用的是别的 profile(web 等),
   请用 `install-whale.bat <profile名>` 指定。
-- 版本适配:本包(0.4.1)的界面类名哈希对应 DSH Desktop v2.0.5(web 0.1.2-rc.1)
+- 版本适配:本包(0.5.0)的界面类名哈希对应 DSH Desktop v2.0.5(web 0.1.2-rc.1)
   及更新的 v2.0.9(web 0.1.5-rc.1),二者实测同为 `_1qAH1q` / `uPhUma`。
   若对方是更早的 v2.0.3(web 0.1.1-rc.2),背景透明与"空会话输入栏下移"会失效
   (点阵照常渲染,但会被界面盖住),需按插件 README 的对照表换回旧前缀。
